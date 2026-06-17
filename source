@@ -1,0 +1,198 @@
+local DarkUI = {}
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+local Theme = {
+    Background = Color3.fromRGB(18, 18, 18),
+    Secondary = Color3.fromRGB(28, 28, 28),
+    Accent = Color3.fromRGB(85, 170, 255),
+    Text = Color3.fromRGB(255, 255, 255),
+    Muted = Color3.fromRGB(170, 170, 170)
+}
+
+function DarkUI:CreateWindow(title)
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "DarkUI"
+    ScreenGui.Parent = CoreGui
+
+    local Main = Instance.new("Frame")
+    Main.Parent = ScreenGui
+    Main.Size = UDim2.fromOffset(600, 400)
+    Main.Position = UDim2.fromScale(0.5, 0.5)
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.BackgroundColor3 = Theme.Background
+    Main.BorderSizePixel = 0
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.Parent = Main
+
+    local Topbar = Instance.new("Frame")
+    Topbar.Parent = Main
+    Topbar.Size = UDim2.new(1, 0, 0, 40)
+    Topbar.BackgroundColor3 = Theme.Secondary
+    Topbar.BorderSizePixel = 0
+
+    local Title = Instance.new("TextLabel")
+    Title.Parent = Topbar
+    Title.Size = UDim2.new(1, -20, 1, 0)
+    Title.Position = UDim2.fromOffset(10, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = title or "DarkUI"
+    Title.TextColor3 = Theme.Text
+    Title.Font = Enum.Font.GothamBold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Tabs = Instance.new("Frame")
+    Tabs.Parent = Main
+    Tabs.Size = UDim2.new(0, 150, 1, -40)
+    Tabs.Position = UDim2.fromOffset(0, 40)
+    Tabs.BackgroundColor3 = Theme.Secondary
+    Tabs.BorderSizePixel = 0
+
+    local Content = Instance.new("Frame")
+    Content.Parent = Main
+    Content.Size = UDim2.new(1, -150, 1, -40)
+    Content.Position = UDim2.new(0, 150, 0, 40)
+    Content.BackgroundTransparency = 1
+
+    -- Dragging
+    local dragging = false
+    local dragStart
+    local startPos
+
+    Topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+
+            Main.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    local Window = {}
+
+    function Window:CreateTab(name)
+
+        local TabButton = Instance.new("TextButton")
+        TabButton.Parent = Tabs
+        TabButton.Size = UDim2.new(1, -10, 0, 35)
+        TabButton.Position = UDim2.fromOffset(5, #Tabs:GetChildren() * 40)
+        TabButton.BackgroundColor3 = Theme.Background
+        TabButton.Text = name
+        TabButton.TextColor3 = Theme.Text
+        TabButton.Font = Enum.Font.Gotham
+        TabButton.TextSize = 14
+
+        local Page = Instance.new("ScrollingFrame")
+        Page.Parent = Content
+        Page.Size = UDim2.fromScale(1, 1)
+        Page.Visible = false
+        Page.BackgroundTransparency = 1
+        Page.CanvasSize = UDim2.new()
+
+        local Layout = Instance.new("UIListLayout")
+        Layout.Parent = Page
+        Layout.Padding = UDim.new(0, 6)
+
+        TabButton.MouseButton1Click:Connect(function()
+            for _, v in ipairs(Content:GetChildren()) do
+                if v:IsA("ScrollingFrame") then
+                    v.Visible = false
+                end
+            end
+
+            Page.Visible = true
+        end)
+
+        local Elements = {}
+
+        function Elements:Label(text)
+            local Label = Instance.new("TextLabel")
+            Label.Parent = Page
+            Label.Size = UDim2.new(1, -10, 0, 30)
+            Label.BackgroundTransparency = 1
+            Label.Text = text
+            Label.TextColor3 = Theme.Text
+            Label.Font = Enum.Font.Gotham
+            return Label
+        end
+
+        function Elements:Button(text, callback)
+            local Button = Instance.new("TextButton")
+            Button.Parent = Page
+            Button.Size = UDim2.new(1, -10, 0, 35)
+            Button.BackgroundColor3 = Theme.Secondary
+            Button.Text = text
+            Button.TextColor3 = Theme.Text
+
+            Button.MouseButton1Click:Connect(function()
+                if callback then
+                    callback()
+                end
+            end)
+
+            return Button
+        end
+
+        function Elements:Toggle(text, default, callback)
+
+            local state = default or false
+
+            local Button = Instance.new("TextButton")
+            Button.Parent = Page
+            Button.Size = UDim2.new(1, -10, 0, 35)
+
+            local function refresh()
+                Button.Text =
+                    text ..
+                    " [" ..
+                    (state and "ON" or "OFF") ..
+                    "]"
+
+                Button.BackgroundColor3 =
+                    state and Theme.Accent or Theme.Secondary
+            end
+
+            refresh()
+
+            Button.MouseButton1Click:Connect(function()
+                state = not state
+                refresh()
+
+                if callback then
+                    callback(state)
+                end
+            end)
+
+            return Button
+        end
+
+        return Elements
+    end
+
+    return Window
+end
+
+return DarkUI
