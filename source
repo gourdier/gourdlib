@@ -45,7 +45,25 @@ function DarkUI:CreateWindow(title)
     Title.TextColor3 = Theme.Text
     Title.Font = Enum.Font.GothamBold
     Title.TextXAlignment = Enum.TextXAlignment.Left
+-- Minimize Button
+local Minimize = Instance.new("TextButton")
+Minimize.Parent = Topbar
+Minimize.Size = UDim2.fromOffset(30, 30)
+Minimize.Position = UDim2.new(1, -70, 0.5, -15)
+Minimize.BackgroundTransparency = 1
+Minimize.Text = "−"
+Minimize.TextColor3 = Theme.Muted
+Minimize.Font = Enum.Font.GothamBold
 
+-- Close Button
+local Close = Instance.new("TextButton")
+Close.Parent = Topbar
+Close.Size = UDim2.fromOffset(30, 30)
+Close.Position = UDim2.new(1, -35, 0.5, -15)
+Close.BackgroundTransparency = 1
+Close.Text = "×"
+Close.TextColor3 = Color3.fromRGB(255,100,100)
+Close.Font = Enum.Font.GothamBold
     local Tabs = Instance.new("Frame")
     Tabs.Parent = Main
     Tabs.Size = UDim2.new(0, 150, 1, -40)
@@ -58,7 +76,79 @@ function DarkUI:CreateWindow(title)
     Content.Size = UDim2.new(1, -150, 1, -40)
     Content.Position = UDim2.new(0, 150, 0, 40)
     Content.BackgroundTransparency = 1
+local function Hover(btn, enterColor, leaveColor)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(
+            btn,
+            TweenInfo.new(0.15),
+            {TextColor3 = enterColor}
+        ):Play()
+    end)
 
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(
+            btn,
+            TweenInfo.new(0.15),
+            {TextColor3 = leaveColor}
+        ):Play()
+    end)
+end
+
+Hover(
+    Close,
+    Color3.fromRGB(255,70,70),
+    Color3.fromRGB(255,100,100)
+)
+
+Hover(
+    Minimize,
+    Theme.Text,
+    Theme.Muted
+)
+local Minimized = false
+local OriginalSize = Main.Size
+
+Close.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+Minimize.MouseButton1Click:Connect(function()
+
+    Minimized = not Minimized
+
+    if Minimized then
+
+        Tabs.Visible = false
+        Content.Visible = false
+
+        TweenService:Create(
+            Main,
+            TweenInfo.new(0.25),
+            {
+                Size = UDim2.new(
+                    OriginalSize.X.Scale,
+                    OriginalSize.X.Offset,
+                    0,
+                    40
+                )
+            }
+        ):Play()
+
+    else
+
+        Tabs.Visible = true
+        Content.Visible = true
+
+        TweenService:Create(
+            Main,
+            TweenInfo.new(0.25),
+            {
+                Size = OriginalSize
+            }
+        ):Play()
+
+    end
+end)
     -- Dragging
     local dragging = false
     local dragStart
